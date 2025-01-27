@@ -44,6 +44,10 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # List the contents of the directory to debug the path
+            echo "Listing files in /home/${{ secrets.EC2_USER }}"
+            ls -la /home/${{ secrets.EC2_USER }}
+            
             # Check if the files exist in the current directory
             if [ -d "/home/${{ secrets.EC2_USER }}" ] && [ "$(ls -A /home/${{ secrets.EC2_USER }}/)" ]; then
               echo "Files found, moving to /var/www/html"
