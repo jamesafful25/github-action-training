@@ -15,13 +15,24 @@ jobs:
       - name: Checkout the files
         uses: actions/checkout@v4
 
-      - name: Deploy to Server
+      - name: Create target directory on EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST_DNS }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Ensure the target directory exists
+            sudo mkdir -p /var/www/html
+            sudo chown -R www-data:www-data /var/www/html
+
+      - name: Deploy to Server using Rsync
         uses: easingthemes/ssh-deploy@main
         with:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.HOST_DNS }}
           REMOTE_USER: ${{ secrets.EC2_USER }}
-          TARGET: ${{ secrets.TARGET_DIR }}
+          TARGET: /var/www/html  # Ensure the directory is set correctly
 
       - name: Executing remote ssh commands using ssh key
         uses: appleboy/ssh-action@master
@@ -30,26 +41,12 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Update the system
             sudo apt-get -y update
-
-            # Install Apache2 if not already installed
             sudo apt-get install -y apache2
-
-            # Ensure apache2 starts and is enabled
             sudo systemctl daemon-reload
             sudo systemctl start apache2
             sudo systemctl enable apache2
-
-            # Ensure the target directory exists (e.g., /var/www/html)
-            sudo mkdir -p /var/www/html
-
             # Remove existing contents of /var/www/html
             sudo rm -rf /var/www/html/*
-
-            # Move the new files to /var/www/html
-            sudo mv /home/ubuntu/github-action-practice11/* /var/www/html/
-
-            # Set permissions for Apache to serve the content
-            sudo chown -R www-data:www-data /var/www/html
-            sudo chmod -R 755 /var/www/html
+            # Move new files to /var/www/html
+            sudo mv * /var/www/html
