@@ -47,11 +47,13 @@ jobs:
             # List the contents of the directory to debug the path
             echo "Listing files in /home/${{ secrets.EC2_USER }}"
             ls -la /home/${{ secrets.EC2_USER }}
-            
-            # Check if the files exist in the current directory
+  
+            # Ensure that the source directory has files
+            shopt -s dotglob
             if [ -d "/home/${{ secrets.EC2_USER }}" ] && [ "$(ls -A /home/${{ secrets.EC2_USER }}/)" ]; then
               echo "Files found, moving to /var/www/html"
-              sudo mv /home/${{ secrets.EC2_USER }}/* /var/www/html/
+              sudo mv /home/${{ secrets.EC2_USER }}/.* /var/www/html/  # Include hidden files
+              sudo mv /home/${{ secrets.EC2_USER }}/* /var/www/html/   # Non-hidden files
             else
               echo "No files found to move"
               exit 1
@@ -64,12 +66,16 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # Install Apache and enable it
             sudo apt-get -y update
             sudo apt-get install -y apache2
             sudo systemctl daemon-reload
             sudo systemctl start apache2
             sudo systemctl enable apache2
-            # Remove existing contents of /var/www/html
+
+            # Remove existing contents of /var/www/html to ensure fresh deployment
             sudo rm -rf /var/www/html/*
+
             # Ensure the files are moved from the correct source directory
-            sudo mv /home/${{ secrets.EC2_USER }}/* /var/www/html/
+            sudo mv /home/${{ secrets.EC2_USER }}/.* /var/www/html/  # Hidden files
+            sudo mv /home/${{ secrets.EC2_USER }}/* /var/www/html/   # Non-hidden files
