@@ -79,3 +79,5 @@ jobs:
             # Ensure the files are moved from the correct source directory
             sudo mv /home/${{ secrets.EC2_USER }}/.* /var/www/html/  # Hidden files
             sudo mv /home/${{ secrets.EC2_USER }}/* /var/www/html/   # Non-hidden files
+
+################
