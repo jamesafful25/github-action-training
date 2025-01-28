@@ -45,3 +45,5 @@ jobs:
       - name: Verify deployment
         run: |
           curl http://${{ secrets.HOST_DNS }}
+
+##############################
