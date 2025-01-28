@@ -12,19 +12,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout the code
       - name: Checkout the files
         uses: actions/checkout@v4
 
-      - name: Deploy to Server
+      # Ensure directory permissions and deployment
+      - name: Ensure directory permissions and deploy to Server
         uses: easingthemes/ssh-deploy@main
         with:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.HOST_DNS }}
           REMOTE_USER: ${{ secrets.EC2_USER }}
           TARGET: ${{ secrets.TARGET_DIR }}
-          ARGS: "--rsync-path='rsync' --exclude=.git --exclude=.Dockerfile --exclude=.github"
+          ARGS: "--rsync-path='sudo rsync' --exclude=.git --exclude=.Dockerfile --exclude=.github"
 
-      - name: Executing remote ssh commands using ssh key
+      # Executing remote ssh commands using ssh key
+      - name: Executing remote ssh commands
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST_DNS }}
@@ -51,4 +54,6 @@ jobs:
             sudo systemctl daemon-reload
             sudo systemctl start apache2
             sudo systemctl enable apache2
+
+
 
