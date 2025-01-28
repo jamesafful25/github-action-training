@@ -22,6 +22,7 @@ jobs:
           REMOTE_HOST: ${{ secrets.HOST_DNS }}
           REMOTE_USER: ${{ secrets.EC2_USER }}
           TARGET: ${{ secrets.TARGET_DIR }}
+          ARGS: "--rsync-path='mkdir -p ${{ secrets.TARGET_DIR }} && rsync'"
 
       - name: Executing remote ssh commands using ssh key
         uses: appleboy/ssh-action@master
@@ -30,22 +31,15 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Update and install Apache
             sudo apt-get -y update
             sudo apt-get install -y apache2
-
-            # Start and enable Apache service
             sudo systemctl daemon-reload
             sudo systemctl start apache2
             sudo systemctl enable apache2
-
-            # Navigate to the temporary directory
-            cd /home/ec2-user/github-action-practice11
-
+            cd ${{ secrets.TARGET_DIR }}
             # Remove existing contents of /var/www/html
             sudo rm -rf /var/www/html/*
-
-            # Move the new files to /var/www/html
+            # Move new files to /var/www/html
             sudo mv * /var/www/html
 
             # Set correct permissions
