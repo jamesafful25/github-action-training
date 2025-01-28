@@ -1,0 +1,47 @@
+name: Deploy Resume WebApp to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    environment: prod
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the files
+        uses: actions/checkout@v4
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Install Apache on EC2 and configure directories
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.HOST_DNS }} << 'EOF'
+            sudo apt-get update -y
+            sudo apt-get install -y apache2
+            sudo systemctl start apache2
+            sudo systemctl enable apache2
+            sudo systemctl restart apache2
+            sudo mkdir -p /var/www/html/css /var/www/html/js /var/www/html/images
+            sudo chown -R $USER:$USER /var/www/html
+            sudo chmod -R 755 /var/www/html
+          EOF
+
+      - name: Copy files to EC2
+        run: |
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r ./css ./images ./js ./index.html ${{ secrets.EC2_USER }}@${{ secrets.HOST_DNS }}:/var/www/html
+
+      - name: Restart Apache to apply changes
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.HOST_DNS }} 'sudo systemctl restart apache2'
+
+      - name: Verify deployment
+        run: |
+          curl http://${{ secrets.HOST_DNS }}
