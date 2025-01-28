@@ -14,16 +14,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Copy files to EC2
-        uses: easingthemes/ssh-deploy@main
-        with:
-          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-          REMOTE_HOST: ${{ secrets.HOST_DNS }}
-          REMOTE_USER: ${{ secrets.EC2_USER }}
-          TARGET: ${{ secrets.TARGET_DIR }}
-          ARGS: "--rsync-path='rsync' --exclude=.git --exclude=.Dockerfile --exclude=.github"
-
-      - name: Execute remote SSH commands
+      - name: Execute remote SSH commands (create target directory)
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST_DNS }}
@@ -35,10 +26,26 @@ jobs:
             sudo apt-get install -y apache2
 
             # Ensure target directory exists and has proper permissions
-            sudo mkdir -p ${{ secrets.TARGET_DIR }}
-            sudo chown -R ${{ secrets.EC2_USER }}:${{ secrets.EC2_USER }} ${{ secrets.TARGET_DIR }}
-            sudo chmod -R 755 ${{ secrets.TARGET_DIR }}
-            
+            sudo mkdir -p /var/www/html
+            sudo chown -R ${{ secrets.EC2_USER }}:${{ secrets.EC2_USER }} /var/www/html
+            sudo chmod -R 755 /var/www/html
+
+      - name: Copy files to EC2
+        uses: easingthemes/ssh-deploy@main
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.HOST_DNS }}
+          REMOTE_USER: ${{ secrets.EC2_USER }}
+          TARGET: ${{ secrets.TARGET_DIR }}
+          ARGS: "--rsync-path='rsync' --exclude=.git --exclude=.Dockerfile --exclude=.github"
+
+      - name: Execute remote SSH commands (copy files)
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST_DNS }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
             # Remove old files from /var/www/html and copy new files
             sudo rm -rf /var/www/html/*
             sudo cp -r ${{ secrets.TARGET_DIR }}/* /var/www/html/
@@ -49,3 +56,4 @@ jobs:
 
             # Restart Apache to apply changes
             sudo systemctl restart apache2
+
