@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-
 jobs:
   deploy:
     name: Deploy
@@ -26,16 +25,4 @@ jobs:
 
       - name: Invalidate CloudFront cache
         run: |
-          invalidation_json=$(cat <<EOF
-          {
-            "Paths": {
-              "Quantity": 1,
-              "Items": [ "/*" ]
-            },
-            "CallerReference": "my-invalidation-$(date +%s)"
-          }
-          EOF
-          )
-          aws cloudfront create-invalidation \
-            --distribution-id E11X0IMC4S5BWU \
-            --invalidation-batch "$invalidation_json"
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
