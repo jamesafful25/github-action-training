@@ -37,5 +37,5 @@ jobs:
           EOF
           )
           aws cloudfront create-invalidation \
-            --distribution-id E2X9GHSRABHA0W \
+            --distribution-id E11X0IMC4S5BWU \
             --invalidation-batch "$invalidation_json"
